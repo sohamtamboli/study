@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Database cheatsheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15181e; --side:#1a1e25; --raise:#1f242c; --line:#2b313b;
+  --text:#d9dee6; --muted:#8e97a6; --faint:#626b79;
+  --accent:#7fb2e5; --accent-bg:rgba(127,178,229,.12);
+  --fk:#e2b56e; --ok:#86c9a0; --warn:#e59a8a;
+  --k:#c3a6ec; --s:#9fd4a8; --n:#e8bb7a; --c:#68717f; --f:#7fb2e5;
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:15px/1.7 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+.layout{display:grid;grid-template-columns:272px minmax(0,1fr);height:100vh}
+aside{background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.brand{padding:20px 20px 12px}
+.brand h1{font-size:16px;font-weight:600;margin:0;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.search{margin:4px 16px 8px;position:relative}
+.search input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 34px 7px 10px;font:14px var(--sans)}
+.search input::placeholder{color:var(--faint)}
+.search kbd{position:absolute;right:8px;top:50%;transform:translateY(-50%)}
+kbd{font:12px var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;background:var(--raise)}
+nav{overflow-y:auto;padding:4px 8px 16px;flex:1}
+nav .group{font-size:13px;font-weight:600;color:var(--muted);margin:16px 12px 4px}
+nav a{display:block;color:var(--text);opacity:.78;font-size:14px;padding:5px 12px;border-left:2px solid transparent;border-radius:0 6px 6px 0}
+nav a:hover{opacity:1;text-decoration:none;background:var(--raise)}
+nav a.active{opacity:1;color:var(--accent);border-left-color:var(--accent);background:var(--accent-bg)}
+nav .empty{color:var(--faint);font-size:13px;padding:8px 12px}
+.side-foot{border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:8px}
+button{font:13px var(--sans);color:var(--text);background:var(--raise);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--faint)}
+button.on{color:var(--accent);border-color:var(--accent)}
+
+.scrim{display:none}
+main{overflow-y:auto;min-height:0;grid-column:2;grid-row:1}
+.topbar{display:none}
+.content{max-width:900px;margin:0 auto;padding:80px 0px}
+section{display:none}
+section.show{display:block}
+body.all section{display:block;border-bottom:1px solid var(--line);padding-bottom:40px;margin-bottom:48px}
+section h2{font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1.2;margin:0 0 8px}
+section .lede{color:var(--muted);font-size:16px;margin:0 0 28px}
+section h3{font-size:18px;font-weight:600;margin:32px 0 8px}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 14px;padding-left:22px}
+li{margin:3px 0}
+code{font:13px var(--mono);background:var(--raise);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.pk{color:var(--accent)} .fk{color:var(--fk)}
+
+.code{position:relative;margin:0 0 18px}
+.code pre{margin:0;background:#11141a;border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font:13px/1.65 var(--mono)}
+.code pre code{background:none;border:0;padding:0;font:inherit}
+.copy{position:absolute;top:8px;right:8px;font-size:12px;padding:3px 8px;opacity:0;transition:opacity .15s}
+.code:hover .copy,.copy:focus-visible{opacity:1}
+.tk{color:var(--k)} .ts{color:var(--s)} .tn{color:var(--n)} .tc{color:var(--c);font-style:italic} .tf{color:var(--f)}
+
+.tbl{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-weight:600;color:var(--muted);background:var(--raise);padding:8px 12px;border-bottom:1px solid var(--line)}
+td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+
+.note{border-left:3px solid var(--accent);background:var(--accent-bg);padding:12px 16px;margin:0 0 18px;border-radius:0 6px 6px 0}
+.note.js{border-left-color:var(--fk);background:rgba(226,181,110,.08)}
+.note.warn{border-left-color:var(--warn);background:rgba(229,154,138,.08)}
+.note b{font-weight:600}
+.note p:last-child,.note ul:last-child{margin-bottom:0}
+
+.pager{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:24px;border-top:1px solid var(--line)}
+.pager a{flex:1;border:1px solid var(--line);border-radius:8px;padding:12px 16px;color:var(--text)}
+.pager a:hover{border-color:var(--accent);text-decoration:none}
+.pager small{display:block;color:var(--muted);font-size:12px}
+.pager .next{text-align:right}
+body.all .pager{display:none}
+
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  main{grid-column:1}
+  aside{position:fixed;inset:0 auto 0 0;width:84%;max-width:300px;z-index:20;transform:translateX(-100%);transition:transform .2s}
+  body.nav-open aside{transform:none}
+  body.nav-open .scrim{display:block}
+  .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10}
+  .topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px;z-index:5}
+  .topbar span{font-weight:600;font-size:15px}
+  .content{padding:28px 20px 64px}
+  section h2{font-size:25px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  aside,.topbar,.pager,.copy{display:none!important}
+  .layout{display:block;height:auto} main{overflow:visible}
+  section{display:block!important;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside id="side">
+  <div class="brand">
+    <h1>Database cheatsheet</h1>
+    <p>SQL, design, Postgres, warehouses</p>
+  </div>
+  <div class="search">
+    <input id="q" type="search" placeholder="Search topics" aria-label="Search topics" autocomplete="off">
+    <kbd>/</kbd>
+  </div>
+  <nav id="nav" aria-label="Sections"></nav>
+  <div class="side-foot">
+    <button id="allBtn" type="button">Show all on one page</button>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<main id="main">
+<div class="topbar"><button id="menuBtn" type="button" aria-label="Open menu">Menu</button><span id="topTitle">Database cheatsheet</span></div>
+<div class="content" id="content">
+
+<!-- ===================== START ===================== -->
+<section id="overview" data-group="Start here" data-title="Overview">
+<h2>Overview</h2>
+<p class="lede">How the four topics fit together, and the example store used everywhere in this cheatsheet.</p>
+<p><b>Database design</b> decides which tables exist and how they connect. <b>SQL</b> is the language for asking those tables questions and changing them. <b>Postgres</b> is the database that stores the tables and runs your SQL. <b>Warehouse design</b> is database design for analytics: reshaping history so big questions are fast and simple.</p>
+<div class="note js"><p><b>In JS terms:</b> a table is an array of objects where every object has the same enforced shape. A primary key is the <code>key</code> prop. A foreign key is storing <code>userId</code> instead of nesting the user, like normalized Redux state.</p></div>
+<h3>The example store</h3>
+<p>Every example uses these four tables. <span class="pk">Blue</span> marks primary keys, <span class="fk">amber</span> marks foreign keys.</p>
+<div class="tbl"><table>
+<tr><th>Table</th><th>Columns</th><th>One row means</th></tr>
+<tr><td><code>customers</code></td><td><span class="pk">id</span>, name, email, city, created_at</td><td>A person who can buy</td></tr>
+<tr><td><code>products</code></td><td><span class="pk">id</span>, name, category, price</td><td>A thing for sale</td></tr>
+<tr><td><code>orders</code></td><td><span class="pk">id</span>, <span class="fk">customer_id</span>, status, created_at</td><td>One checkout</td></tr>
+<tr><td><code>order_items</code></td><td><span class="pk">id</span>, <span class="fk">order_id</span>, <span class="fk">product_id</span>, qty, unit_price</td><td>One product line inside an order</td></tr>
+</table></div>
+<p>The full <code>CREATE TABLE</code> script is in <a href="#ddl">Creating tables</a>. Paste it into Postgres to follow along.</p>
+<h3>Suggested reading order</h3>
+<ol>
+<li>SQL section, top to bottom. This is the skill you'll use daily.</li>
+<li>Design section, to learn why tables are shaped the way they are.</li>
+<li>Postgres section, for types, indexes, performance, and transactions.</li>
+<li>Warehouse section, once you're comfortable writing joins and aggregates.</li>
+</ol>
+</section>
+
+<section id="oltp-olap" data-group="Start here" data-title="OLTP vs OLAP">
+<h2>OLTP vs OLAP</h2>
+<p class="lede">The same data, shaped two ways for two different jobs.</p>
+<div class="tbl"><table>
+<tr><th></th><th>OLTP (app database)</th><th>OLAP (warehouse)</th></tr>
+<tr><td>Job</td><td>Run the product: save this order now</td><td>Analyze the business: revenue by month by region</td></tr>
+<tr><td>Typical query</td><td>Touches a few rows by ID</td><td>Scans millions of rows, aggregates them</td></tr>
+<tr><td>Writes</td><td>Constant small inserts and updates</td><td>Bulk loads, hourly or daily</td></tr>
+<tr><td>Shape</td><td>Normalized (each fact in one place)</td><td>Denormalized star schema (facts + dimensions)</td></tr>
+<tr><td>Storage</td><td>Row-oriented</td><td>Usually column-oriented</td></tr>
+<tr><td>Examples</td><td>Postgres, MySQL, SQL Server</td><td>BigQuery, Snowflake, Redshift, ClickHouse</td></tr>
+<tr><td>Users</td><td>Your app's backend</td><td>Analysts, dashboards, data scientists</td></tr>
+</table></div>
+<div class="note"><p><b>Why not just run analytics on the app database?</b> Heavy reports compete with real users for CPU and locks, and normalized tables need many joins for every report. Small companies often start with Postgres for both, then split once reports get slow.</p></div>
+</section>
+
+<section id="setup" data-group="Start here" data-title="Postgres setup and psql">
+<h2>Postgres setup and psql</h2>
+<p class="lede">Get a local database running and learn the command-line client.</p>
+<h3>Run Postgres with Docker</h3>
+<div class="code"><pre><code class="sh">docker run --name pg -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres:17
+docker exec -it pg psql -U postgres</code></pre></div>
+<p>No Docker? Use Postgres.app on macOS, the official installer on Windows, or your package manager on Linux. GUI clients like DBeaver, TablePlus, or pgAdmin work too.</p>
+<h3>psql commands</h3>
+<div class="tbl"><table>
+<tr><th>Command</th><th>Does</th></tr>
+<tr><td><code>\l</code></td><td>List databases</td></tr>
+<tr><td><code>\c shop</code></td><td>Connect to database <code>shop</code></td></tr>
+<tr><td><code>\dt</code></td><td>List tables</td></tr>
+<tr><td><code>\d orders</code></td><td>Describe a table: columns, indexes, constraints</td></tr>
+<tr><td><code>\di</code></td><td>List indexes</td></tr>
+<tr><td><code>\x</code></td><td>Toggle expanded output (great for wide rows)</td></tr>
+<tr><td><code>\timing</code></td><td>Show how long each query takes</td></tr>
+<tr><td><code>\i file.sql</code></td><td>Run a SQL file</td></tr>
+<tr><td><code>\e</code></td><td>Edit the last query in your editor</td></tr>
+<tr><td><code>\?</code> / <code>\h SELECT</code></td><td>Help for psql / help for a SQL command</td></tr>
+<tr><td><code>\q</code></td><td>Quit</td></tr>
+</table></div>
+<div class="code"><pre><code class="sql">CREATE DATABASE shop;
+-- then: \c shop</code></pre></div>
+<div class="note"><p>Every SQL statement ends with a semicolon. If psql seems stuck with a <code>-#</code> prompt, it's waiting for one.</p></div>
+</section>
+
+<!-- ===================== SQL ===================== -->
+<section id="select" data-group="SQL" data-title="SELECT basics">
+<h2>SELECT basics</h2>
+<p class="lede">Read rows and choose columns.</p>
+<div class="code"><pre><code class="sql">SELECT * FROM products;                      -- every column (fine for exploring, avoid in app code)
+
+SELECT name, price FROM products;            -- pick columns
+
+SELECT name, price * 1.18 AS price_with_gst  -- computed column with an alias
+FROM products;
+
+SELECT DISTINCT category FROM products;      -- unique values only
+
+SELECT name, price
+FROM products
+ORDER BY price DESC, name ASC                -- sort; ASC is the default
+LIMIT 10 OFFSET 20;                          -- page 3 of 10 per page</code></pre></div>
+<div class="note js"><p><b>In JS terms:</b> <code>SELECT name, price</code> is <code>.map(p =&gt; ({name, price}))</code>. <code>ORDER BY</code> is <code>.sort()</code>. <code>LIMIT/OFFSET</code> is <code>.slice()</code>.</p></div>
+<div class="note warn"><p>Large <code>OFFSET</code> values get slow because Postgres still reads the skipped rows. For infinite scroll, use keyset pagination: <code>WHERE id &gt; :last_seen_id ORDER BY id LIMIT 20</code>.</p></div>
+<p>Without <code>ORDER BY</code>, row order is not guaranteed, even if it looks stable.</p>
+</section>
+
+<section id="where" data-group="SQL" data-title="Filtering with WHERE">
+<h2>Filtering with WHERE</h2>
+<p class="lede">Keep only rows that match a condition.</p>
+<div class="code"><pre><code class="sql">SELECT * FROM products WHERE price &gt;= 1000;
+SELECT * FROM products WHERE category &lt;&gt; 'Kitchen';          -- not equal (!= also works)
+SELECT * FROM products WHERE category IN ('Electronics', 'Books');
+SELECT * FROM products WHERE price BETWEEN 500 AND 2000;      -- inclusive both ends
+SELECT * FROM customers WHERE name LIKE 'A%';                 -- starts with A, case-sensitive
+SELECT * FROM customers WHERE email ILIKE '%@gmail.com';      -- case-insensitive (Postgres)
+SELECT * FROM customers WHERE city IS NULL;                   -- never write = NULL
+
+SELECT * FROM orders
+WHERE status = 'paid'
+  AND (created_at &gt;= '2026-01-01' OR customer_id = 1);       -- use parentheses with OR</code></pre></div>
+<div class="tbl"><table>
+<tr><th>Pattern</th><th>Matches</th></tr>
+<tr><td><code>%</code></td><td>Any number of characters</td></tr>
+<tr><td><code>_</code></td><td>Exactly one character</td></tr>
+</table></div>
+<h3>NULL is "unknown", not empty</h3>
+<ul>
+<li><code>NULL = NULL</code> is not true; it's NULL. Use <code>IS NULL</code> / <code>IS NOT NULL</code>.</li>
+<li><code>WHERE city &lt;&gt; 'Pune'</code> silently excludes rows where city is NULL.</li>
+<li><code>COALESCE(city, 'Unknown')</code> swaps NULL for a fallback, like JS <code>??</code>.</li>
+<li><code>IS DISTINCT FROM</code> compares values treating NULL as a normal value.</li>
+</ul>
+</section>
+
+<section id="aggregates" data-group="SQL" data-title="Aggregates and GROUP BY">
+<h2>Aggregates and GROUP BY</h2>
+<p class="lede">Collapse many rows into summary numbers.</p>
+<div class="code"><pre><code class="sql">SELECT COUNT(*) FROM orders;                    -- number of rows
+SELECT COUNT(city) FROM customers;              -- non-NULL cities only
+SELECT COUNT(DISTINCT city) FROM customers;     -- unique cities
+SELECT SUM(price), AVG(price), MIN(price), MAX(price) FROM products;
+
+-- one output row per category
+SELECT category, COUNT(*) AS products, AVG(price) AS avg_price
+FROM products
+GROUP BY category;
+
+-- HAVING filters groups (WHERE filters rows before grouping)
+SELECT customer_id, COUNT(*) AS order_count
+FROM orders
+WHERE status = 'paid'
+GROUP BY customer_id
+HAVING COUNT(*) &gt;= 3
+ORDER BY order_count DESC;
+
+-- conditional aggregates in one pass
+SELECT
+  COUNT(*) FILTER (WHERE status = 'paid')      AS paid,
+  COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled
+FROM orders;</code></pre></div>
+<div class="note js"><p><b>In JS terms:</b> <code>GROUP BY</code> plus <code>SUM</code> is <code>reduce()</code> into an object keyed by the group column.</p></div>
+<div class="note warn"><p>Every column in <code>SELECT</code> must either be in <code>GROUP BY</code> or wrapped in an aggregate. Otherwise Postgres errors, because it can't know which row's value to show.</p></div>
+</section>
+
+<section id="joins" data-group="SQL" data-title="Joins">
+<h2>Joins</h2>
+<p class="lede">Combine rows from related tables using their keys.</p>
+<div class="tbl"><table>
+<tr><th>Join</th><th>Keeps</th><th>Use when</th></tr>
+<tr><td><code>INNER JOIN</code></td><td>Only rows with a match on both sides</td><td>You need data from both tables</td></tr>
+<tr><td><code>LEFT JOIN</code></td><td>All left rows, NULLs where no match</td><td>"Include customers even with zero orders"</td></tr>
+<tr><td><code>RIGHT JOIN</code></td><td>All right rows</td><td>Rarely; rewrite as LEFT JOIN instead</td></tr>
+<tr><td><code>FULL JOIN</code></td><td>All rows from both sides</td><td>Reconciling two lists</td></tr>
+<tr><td><code>CROSS JOIN</code></td><td>Every combination</td><td>Generating grids (dates × products)</td></tr>
+</table></div>
+<div class="code"><pre><code class="sql">-- orders with customer names
+SELECT o.id, o.created_at, c.name
+FROM orders o
+JOIN customers c ON c.id = o.customer_id;       -- JOIN means INNER JOIN
+
+-- order totals: chain joins along foreign keys
+SELECT o.id, c.name, SUM(oi.qty * oi.unit_price) AS total
+FROM orders o
+JOIN customers c    ON c.id = o.customer_id
+JOIN order_items oi ON oi.order_id = o.id
+GROUP BY o.id, c.name;
+
+-- every customer and their order count, including zero
+SELECT c.name, COUNT(o.id) AS orders
+FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.id
+GROUP BY c.name;
+
+-- anti-join: customers who never ordered
+SELECT c.*
+FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.id
+WHERE o.id IS NULL;</code></pre></div>
+<div class="note warn"><p>Joining a one-to-many relationship multiplies rows. If an order has 3 items, joining orders to items gives 3 rows per order. Summing an order-level column after that join counts it 3 times.</p></div>
+<div class="note warn"><p>Putting a condition on the right table in <code>WHERE</code> turns a LEFT JOIN back into an INNER JOIN. Put it in the <code>ON</code> clause instead: <code>LEFT JOIN orders o ON o.customer_id = c.id AND o.status = 'paid'</code>.</p></div>
+</section>
+
+<section id="subqueries" data-group="SQL" data-title="Subqueries and CTEs">
+<h2>Subqueries and CTEs</h2>
+<p class="lede">Break big queries into named, readable steps.</p>
+<div class="code"><pre><code class="sql">-- subquery in WHERE
+SELECT * FROM products
+WHERE price &gt; (SELECT AVG(price) FROM products);
+
+-- EXISTS: does at least one matching row exist?
+SELECT * FROM customers c
+WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id);
+
+-- CTE (WITH): like declaring const variables before the main query
+WITH order_totals AS (
+  SELECT order_id, SUM(qty * unit_price) AS total
+  FROM order_items
+  GROUP BY order_id
+),
+big_orders AS (
+  SELECT * FROM order_totals WHERE total &gt; 5000
+)
+SELECT o.id, o.customer_id, b.total
+FROM big_orders b
+JOIN orders o ON o.id = b.order_id;
+
+-- recursive CTE: walk a tree (categories with parent_id)
+WITH RECURSIVE tree AS (
+  SELECT id, name, parent_id, 1 AS depth FROM categories WHERE parent_id IS NULL
+  UNION ALL
+  SELECT c.id, c.name, c.parent_id, t.depth + 1
+  FROM categories c JOIN tree t ON c.parent_id = t.id
+)
+SELECT * FROM tree;</code></pre></div>
+<div class="note"><p>Prefer CTEs for readability. Use <code>NOT EXISTS</code> rather than <code>NOT IN (subquery)</code>, because <code>NOT IN</code> returns nothing if the subquery contains a NULL.</p></div>
+</section>
+
+<section id="windows" data-group="SQL" data-title="Window functions">
+<h2>Window functions</h2>
+<p class="lede">Compute across related rows without collapsing them.</p>
+<p><code>GROUP BY</code> turns many rows into one. A window function keeps every row and adds a column computed over a "window" of related rows.</p>
+<div class="code"><pre><code class="sql">-- rank products by price inside each category
+SELECT name, category, price,
+       RANK() OVER (PARTITION BY category ORDER BY price DESC) AS price_rank
+FROM products;
+
+-- each customer's latest order (top-1 per group)
+WITH ranked AS (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at DESC) AS rn
+  FROM orders
+)
+SELECT * FROM ranked WHERE rn = 1;
+
+-- running total and day-over-day change
+WITH daily AS (
+  SELECT created_at::date AS day, COUNT(*) AS orders
+  FROM orders GROUP BY 1
+)
+SELECT day, orders,
+       SUM(orders) OVER (ORDER BY day)       AS running_total,
+       orders - LAG(orders) OVER (ORDER BY day) AS change_vs_prev_day
+FROM daily;</code></pre></div>
+<div class="tbl"><table>
+<tr><th>Function</th><th>Gives</th></tr>
+<tr><td><code>ROW_NUMBER()</code></td><td>1, 2, 3, 4 with no ties</td></tr>
+<tr><td><code>RANK()</code></td><td>1, 2, 2, 4 (gaps after ties)</td></tr>
+<tr><td><code>DENSE_RANK()</code></td><td>1, 2, 2, 3 (no gaps)</td></tr>
+<tr><td><code>LAG(col)</code> / <code>LEAD(col)</code></td><td>Previous / next row's value</td></tr>
+<tr><td><code>SUM(col) OVER (...)</code></td><td>Running or partitioned total</td></tr>
+<tr><td><code>NTILE(4)</code></td><td>Bucket rows into quartiles</td></tr>
+</table></div>
+<p><code>PARTITION BY</code> is "restart for each group". <code>ORDER BY</code> inside <code>OVER</code> is the order the window moves in.</p>
+</section>
+
+<section id="modify" data-group="SQL" data-title="Insert, update, delete">
+<h2>Insert, update, delete</h2>
+<p class="lede">Change data safely.</p>
+<div class="code"><pre><code class="sql">INSERT INTO customers (name, email, city)
+VALUES ('Asha', 'asha@example.com', 'Pune')
+RETURNING id;                                   -- get the generated id back
+
+INSERT INTO products (name, category, price) VALUES
+  ('Keyboard', 'Electronics', 1500),
+  ('Mug',      'Kitchen',      300);
+
+UPDATE products
+SET price = price * 0.9
+WHERE category = 'Kitchen'
+RETURNING id, price;
+
+DELETE FROM orders WHERE status = 'cancelled' AND created_at &lt; now() - interval '1 year';
+
+-- upsert: insert, or update if the email already exists
+INSERT INTO customers (name, email, city)
+VALUES ('Asha K', 'asha@example.com', 'Mumbai')
+ON CONFLICT (email) DO UPDATE
+SET name = EXCLUDED.name, city = EXCLUDED.city;
+
+-- insert only if not present
+INSERT INTO customers (name, email) VALUES ('Rohan', 'rohan@example.com')
+ON CONFLICT (email) DO NOTHING;</code></pre></div>
+<div class="note warn"><p><code>UPDATE</code> or <code>DELETE</code> without <code>WHERE</code> affects every row. Run the same <code>WHERE</code> as a <code>SELECT</code> first, or wrap the change in a transaction so you can <code>ROLLBACK</code>.</p></div>
+<p><code>ON CONFLICT</code> needs a unique constraint or index on the conflict column. <code>EXCLUDED</code> refers to the row you tried to insert.</p>
+</section>
+
+<section id="order" data-group="SQL" data-title="How a query runs">
+<h2>How a query runs</h2>
+<p class="lede">You write SELECT first, but Postgres logically evaluates it later.</p>
+<div class="tbl"><table>
+<tr><th>Step</th><th>Clause</th><th>What happens</th></tr>
+<tr><td>1</td><td><code>FROM</code> / <code>JOIN</code></td><td>Build the combined set of rows</td></tr>
+<tr><td>2</td><td><code>WHERE</code></td><td>Drop rows that don't match</td></tr>
+<tr><td>3</td><td><code>GROUP BY</code></td><td>Bucket remaining rows</td></tr>
+<tr><td>4</td><td><code>HAVING</code></td><td>Drop buckets that don't match</td></tr>
+<tr><td>5</td><td><code>SELECT</code></td><td>Compute output columns and aliases; window functions run here</td></tr>
+<tr><td>6</td><td><code>DISTINCT</code></td><td>Remove duplicate output rows</td></tr>
+<tr><td>7</td><td><code>ORDER BY</code></td><td>Sort (can use SELECT aliases)</td></tr>
+<tr><td>8</td><td><code>LIMIT</code> / <code>OFFSET</code></td><td>Cut the result</td></tr>
+</table></div>
+<p>This explains common errors. You can't use a <code>SELECT</code> alias in <code>WHERE</code> because <code>WHERE</code> runs first. You can't use window functions in <code>WHERE</code> either; wrap the query in a CTE and filter outside.</p>
+</section>
+
+<section id="functions" data-group="SQL" data-title="Useful functions">
+<h2>Useful functions</h2>
+<p class="lede">The ones you'll reach for weekly.</p>
+<div class="code"><pre><code class="sql">-- conditional logic, like a ternary or switch
+SELECT name,
+  CASE WHEN price &gt;= 5000 THEN 'premium'
+       WHEN price &gt;= 1000 THEN 'mid'
+       ELSE 'budget' END AS tier
+FROM products;
+
+-- strings
+SELECT lower(email), upper(name), length(name), trim(name),
+       name || ' (' || city || ')',            -- concatenate
+       concat_ws(', ', city, 'India'),          -- join with separator, skips NULLs
+       split_part(email, '@', 2) AS domain,
+       replace(name, ' ', '-')
+FROM customers;
+
+-- dates and times
+SELECT now(), current_date,
+       created_at::date,                        -- cast to date
+       date_trunc('month', created_at),         -- first instant of the month
+       extract(year FROM created_at),
+       created_at + interval '7 days',
+       age(now(), created_at)
+FROM orders;
+
+-- casting and NULL handling
+SELECT '42'::int, 3.7::int, price::text,
+       COALESCE(city, 'Unknown'),
+       NULLIF(qty, 0)                           -- returns NULL if qty = 0 (avoids divide-by-zero)
+FROM customers, order_items LIMIT 1;
+
+-- generate a series of dates (great for filling chart gaps)
+SELECT generate_series('2026-01-01'::date, '2026-01-31', interval '1 day')::date AS day;</code></pre></div>
+</section>
+
+<!-- ===================== DESIGN ===================== -->
+<section id="keys" data-group="Database design" data-title="Keys">
+<h2>Keys</h2>
+<p class="lede">How rows are identified and how tables point at each other.</p>
+<ul>
+<li><b class="pk">Primary key (PK):</b> uniquely identifies each row. Never NULL, never duplicated. One per table.</li>
+<li><b class="fk">Foreign key (FK):</b> a column that must match a PK in another table. Postgres rejects orders pointing at customers that don't exist.</li>
+<li><b>Natural key:</b> real-world unique value, like email or PAN number. Can change, so risky as a PK.</li>
+<li><b>Surrogate key:</b> meaningless generated ID. The default choice for PKs.</li>
+<li><b>Composite key:</b> a PK made of several columns, like <code>(order_id, product_id)</code>.</li>
+</ul>
+<div class="code"><pre><code class="sql">-- auto-incrementing integer (modern Postgres; prefer over SERIAL)
+id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY
+
+-- UUID: safe to generate on the client, hides row counts in URLs
+id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+
+-- foreign key
+customer_id bigint NOT NULL REFERENCES customers(id)</code></pre></div>
+<div class="tbl"><table>
+<tr><th></th><th>bigint identity</th><th>uuid</th></tr>
+<tr><td>Size</td><td>8 bytes</td><td>16 bytes</td></tr>
+<tr><td>Readable</td><td>Yes (<code>/orders/101</code>)</td><td>No</td></tr>
+<tr><td>Guessable</td><td>Yes, leaks volume</td><td>No</td></tr>
+<tr><td>Generate before insert</td><td>No</td><td>Yes</td></tr>
+</table></div>
+<p>A common pattern: keep a natural key like email as <code>UNIQUE</code>, but use a surrogate key as the PK.</p>
+</section>
+
+<section id="relationships" data-group="Database design" data-title="Relationships">
+<h2>Relationships</h2>
+<p class="lede">The three shapes, and where the foreign key goes in each.</p>
+<div class="tbl"><table>
+<tr><th>Type</th><th>Example</th><th>How to model</th></tr>
+<tr><td>One-to-many</td><td>A customer has many orders</td><td>FK on the "many" side: <code>orders.customer_id</code></td></tr>
+<tr><td>Many-to-many</td><td>Orders contain many products; products appear in many orders</td><td>A junction table with two FKs: <code>order_items</code></td></tr>
+<tr><td>One-to-one</td><td>A user has one profile</td><td>FK with <code>UNIQUE</code>, or share the same PK</td></tr>
+</table></div>
+<div class="code"><pre><code class="sql">-- many-to-many: students and courses
+CREATE TABLE enrollments (
+  student_id bigint REFERENCES students(id),
+  course_id  bigint REFERENCES courses(id),
+  enrolled_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (student_id, course_id)     -- a student can't enroll twice
+);</code></pre></div>
+<div class="note"><p>Junction tables often grow their own data. <code>order_items</code> stores <code>qty</code> and <code>unit_price</code>, because those belong to the pairing, not to the order or the product alone.</p></div>
+<div class="note js"><p><b>In JS terms:</b> you'd never store <code>order.products = [{...full product}]</code> in normalized state. You'd store IDs and look them up. That's exactly what a junction table does.</p></div>
+</section>
+
+<section id="normalization" data-group="Database design" data-title="Normalization">
+<h2>Normalization</h2>
+<p class="lede">Store each fact once, so it can't get out of sync.</p>
+<p>Without normalization, Asha's city is copied into every order. Change it in one place and the others become wrong. That's an update anomaly.</p>
+<div class="tbl"><table>
+<tr><th>Form</th><th>Rule</th><th>Fix when broken</th></tr>
+<tr><td>1NF</td><td>Each cell holds one value; no repeating columns like <code>phone1, phone2</code></td><td>Move the repeated values into their own table</td></tr>
+<tr><td>2NF</td><td>With a composite key, every column depends on the whole key</td><td><code>product_name</code> in <code>order_items</code> depends only on <code>product_id</code>, so move it to <code>products</code></td></tr>
+<tr><td>3NF</td><td>Columns depend only on the key, not on other non-key columns</td><td><code>city → state</code> inside customers? Split into a cities table if it matters</td></tr>
+</table></div>
+<p>A memorable summary: every column depends on the key, the whole key, and nothing but the key.</p>
+<h3>When to denormalize on purpose</h3>
+<ul>
+<li><b>Historical snapshots:</b> <code>order_items.unit_price</code> copies the price at purchase time. If the product price changes later, old orders must not change.</li>
+<li><b>Read performance:</b> a cached <code>orders.total</code> avoids summing items on every page load. You must keep it in sync.</li>
+<li><b>Warehouses:</b> star schemas deliberately denormalize for analytics.</li>
+</ul>
+<div class="note"><p>Default to 3NF in your app database. Denormalize only with a specific reason you can name.</p></div>
+</section>
+
+<section id="constraints" data-group="Database design" data-title="Constraints">
+<h2>Constraints</h2>
+<p class="lede">Rules the database enforces so bad data can't get in, no matter which app writes it.</p>
+<div class="code"><pre><code class="sql">CREATE TABLE products (
+  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  sku        text NOT NULL UNIQUE,
+  name       text NOT NULL,
+  price      numeric(10,2) NOT NULL CHECK (price &gt;= 0),
+  status     text NOT NULL DEFAULT 'active'
+             CHECK (status IN ('active', 'archived')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);</code></pre></div>
+<h3>What happens to children when a parent is deleted</h3>
+<div class="tbl"><table>
+<tr><th>Option</th><th>Effect</th><th>Good for</th></tr>
+<tr><td><code>ON DELETE RESTRICT</code> (default-ish)</td><td>Blocks deleting a customer who has orders</td><td>Important history like orders and payments</td></tr>
+<tr><td><code>ON DELETE CASCADE</code></td><td>Deleting an order deletes its items</td><td>Children meaningless without the parent</td></tr>
+<tr><td><code>ON DELETE SET NULL</code></td><td>Child keeps existing, FK becomes NULL</td><td>Optional links, like <code>assigned_to</code></td></tr>
+</table></div>
+<div class="code"><pre><code class="sql">order_id bigint NOT NULL REFERENCES orders(id) ON DELETE CASCADE</code></pre></div>
+<div class="note"><p>Your frontend validation is for user experience. Constraints are for correctness. Use both: the database is the last line of defense against bugs, scripts, and race conditions.</p></div>
+<p>Many apps never hard-delete important rows. Instead they add <code>deleted_at timestamptz</code> (soft delete) and filter it out in queries.</p>
+</section>
+
+<section id="naming" data-group="Database design" data-title="Naming conventions">
+<h2>Naming conventions</h2>
+<p class="lede">Pick a style once and never debate it again.</p>
+<ul>
+<li>Use <code>snake_case</code> for everything. Postgres folds unquoted names to lowercase, so <code>createdAt</code> becomes <code>createdat</code>.</li>
+<li>Plural table names (<code>orders</code>) or singular (<code>order</code>): either works, just be consistent. Plural is more common in Postgres.</li>
+<li>PK is <code>id</code>. FK is <code>&lt;singular_table&gt;_id</code>: <code>customer_id</code>.</li>
+<li>Timestamps end in <code>_at</code> (<code>created_at</code>), dates in <code>_on</code> or <code>_date</code>, booleans start with <code>is_</code> or <code>has_</code>.</li>
+<li>Avoid reserved words as names: <code>user</code>, <code>order</code>, <code>group</code>. This is one reason plural names help.</li>
+<li>Store money in the smallest unit as integer (paise) or as <code>numeric</code>, and name it clearly: <code>price_paise</code> or <code>price</code> with a currency column.</li>
+</ul>
+<div class="note js"><p><b>In JS terms:</b> your API layer or ORM maps <code>created_at</code> to <code>createdAt</code>. Don't fight Postgres casing with quoted identifiers.</p></div>
+</section>
+
+<section id="design-process" data-group="Database design" data-title="Design checklist">
+<h2>Design checklist</h2>
+<p class="lede">A repeatable process for designing a schema from a feature idea.</p>
+<ol>
+<li><b>List the nouns</b> in the feature: customer, product, order. Each strong noun is a candidate table.</li>
+<li><b>Define one row</b> of each table in a sentence: "one row is one checkout". If you can't, the table is muddled.</li>
+<li><b>Find relationships</b> between each pair: one-to-many, many-to-many, or none.</li>
+<li><b>Place foreign keys</b> on the "many" side; create junction tables for many-to-many.</li>
+<li><b>Choose types and constraints</b>: NOT NULL by default, UNIQUE for natural keys, CHECK for allowed values.</li>
+<li><b>Ask what must never change</b> (prices at purchase, addresses at shipping) and snapshot it.</li>
+<li><b>Write the queries your screens need</b> and check each is straightforward.</li>
+<li><b>Add indexes</b> for the columns those queries filter, join, and sort on.</li>
+<li><b>Add <code>created_at</code> and <code>updated_at</code></b> to almost everything.</li>
+<li><b>Draw it</b> as an ERD (dbdiagram.io or DBeaver can generate one) and explain it to someone.</li>
+</ol>
+<div class="note"><p>Design from your screens backward. If a page needs a query with seven joins and three subqueries, the schema may be fighting the product.</p></div>
+</section>
+
+<!-- ===================== POSTGRES ===================== -->
+<section id="types" data-group="Postgres" data-title="Data types">
+<h2>Data types</h2>
+<p class="lede">Pick the right type and the database validates for you.</p>
+<div class="tbl"><table>
+<tr><th>Need</th><th>Use</th><th>Avoid</th></tr>
+<tr><td>Text of any length</td><td><code>text</code></td><td><code>varchar(255)</code> out of habit; add a CHECK if you need a limit</td></tr>
+<tr><td>Whole numbers</td><td><code>int</code>, <code>bigint</code> for IDs and counters</td><td></td></tr>
+<tr><td>Money, exact decimals</td><td><code>numeric(12,2)</code> or integer paise</td><td><code>float</code>/<code>real</code>: 0.1 + 0.2 problems</td></tr>
+<tr><td>Measurements</td><td><code>double precision</code></td><td></td></tr>
+<tr><td>True/false</td><td><code>boolean</code></td><td>'Y'/'N' strings</td></tr>
+<tr><td>A moment in time</td><td><code>timestamptz</code></td><td><code>timestamp</code> without time zone</td></tr>
+<tr><td>Calendar date</td><td><code>date</code></td><td></td></tr>
+<tr><td>Duration</td><td><code>interval</code></td><td></td></tr>
+<tr><td>Unique IDs</td><td><code>uuid</code></td><td>uuid as text</td></tr>
+<tr><td>Flexible/nested data</td><td><code>jsonb</code></td><td><code>json</code> (slower, no indexes)</td></tr>
+<tr><td>List of values</td><td><code>text[]</code> for simple tags</td><td>Comma-separated strings</td></tr>
+<tr><td>Fixed set of values</td><td><code>text</code> + CHECK, or a lookup table</td><td>Enums if values change often</td></tr>
+</table></div>
+<div class="note"><p><code>timestamptz</code> stores an exact instant (in UTC internally) and converts to the session time zone on display. Send ISO strings with offsets from JS, like <code>new Date().toISOString()</code>.</p></div>
+</section>
+
+<section id="ddl" data-group="Postgres" data-title="Creating tables">
+<h2>Creating tables</h2>
+<p class="lede">The full example store schema, plus how to change tables later.</p>
+<div class="code"><pre><code class="sql">CREATE TABLE customers (
+  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name       text NOT NULL,
+  email      text NOT NULL UNIQUE,
+  city       text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE products (
+  id       bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name     text NOT NULL,
+  category text NOT NULL,
+  price    numeric(10,2) NOT NULL CHECK (price &gt;= 0)
+);
+
+CREATE TABLE orders (
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  customer_id bigint NOT NULL REFERENCES customers(id),
+  status      text NOT NULL DEFAULT 'pending'
+              CHECK (status IN ('pending', 'paid', 'shipped', 'cancelled')),
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE order_items (
+  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  order_id   bigint NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_id bigint NOT NULL REFERENCES products(id),
+  qty        int NOT NULL CHECK (qty &gt; 0),
+  unit_price numeric(10,2) NOT NULL,
+  UNIQUE (order_id, product_id)
+);
+
+CREATE INDEX ON orders (customer_id);
+CREATE INDEX ON order_items (product_id);
+
+-- sample data
+INSERT INTO customers (name, email, city) VALUES
+  ('Asha', 'asha@example.com', 'Pune'), ('Rohan', 'rohan@example.com', 'Mumbai');
+INSERT INTO products (name, category, price) VALUES
+  ('Keyboard', 'Electronics', 1500), ('Mug', 'Kitchen', 300), ('Monitor', 'Electronics', 9000);
+INSERT INTO orders (customer_id, status, created_at) VALUES
+  (1, 'paid', '2026-09-02'), (2, 'paid', '2026-09-15'), (1, 'pending', '2026-10-01');
+INSERT INTO order_items (order_id, product_id, qty, unit_price) VALUES
+  (1, 1, 1, 1500), (1, 2, 2, 300), (2, 3, 1, 9000), (3, 2, 4, 300);</code></pre></div>
+<h3>Changing tables</h3>
+<div class="code"><pre><code class="sql">ALTER TABLE customers ADD COLUMN phone text;
+ALTER TABLE customers ALTER COLUMN city SET NOT NULL;
+ALTER TABLE customers RENAME COLUMN city TO home_city;
+ALTER TABLE customers DROP COLUMN phone;
+ALTER TABLE products  ADD CONSTRAINT products_name_key UNIQUE (name);
+DROP TABLE IF EXISTS temp_import;
+TRUNCATE order_items;          -- delete all rows fast</code></pre></div>
+<div class="note"><p>In real projects, schema changes go in versioned migration files (Prisma, Drizzle, Knex, Flyway, Rails, Django), never typed by hand into production.</p></div>
+</section>
+
+<section id="indexes" data-group="Postgres" data-title="Indexes">
+<h2>Indexes</h2>
+<p class="lede">A sorted lookup structure that lets Postgres skip reading the whole table.</p>
+<div class="note js"><p><b>In JS terms:</b> scanning a table is <code>array.find()</code>. An index is building a <code>Map</code> keyed by that column. Lookups become fast, but every insert must update the Map too.</p></div>
+<div class="code"><pre><code class="sql">CREATE INDEX orders_customer_id_idx ON orders (customer_id);
+
+-- composite: helps WHERE customer_id = ? ORDER BY created_at DESC
+CREATE INDEX ON orders (customer_id, created_at DESC);
+
+-- unique index doubles as a constraint
+CREATE UNIQUE INDEX ON customers (lower(email));     -- expression index
+
+-- partial: index only the rows you query
+CREATE INDEX ON orders (created_at) WHERE status = 'pending';
+
+-- jsonb / arrays / full-text search
+CREATE INDEX ON events USING gin (payload);
+
+-- build without locking writes on a live table
+CREATE INDEX CONCURRENTLY orders_status_idx ON orders (status);</code></pre></div>
+<h3>Rules of thumb</h3>
+<ul>
+<li>Primary keys and UNIQUE columns get an index automatically. Foreign keys do <b>not</b>; index them yourself.</li>
+<li>Index columns used in <code>WHERE</code>, <code>JOIN ... ON</code>, and <code>ORDER BY</code> of frequent queries.</li>
+<li>Composite index column order matters: <code>(a, b)</code> helps queries on <code>a</code> or <code>a and b</code>, not on <code>b</code> alone.</li>
+<li>Low-variety columns (a boolean, a 3-value status) rarely benefit, except as partial indexes.</li>
+<li>Wrapping a column in a function (<code>WHERE lower(email) = ...</code>) skips a plain index; use an expression index.</li>
+<li><code>LIKE 'abc%'</code> can use an index; <code>LIKE '%abc'</code> can't.</li>
+<li>Each index slows writes and uses disk. Add them for real queries, then verify with EXPLAIN.</li>
+</ul>
+</section>
+
+<section id="explain" data-group="Postgres" data-title="EXPLAIN and performance">
+<h2>EXPLAIN and performance</h2>
+<p class="lede">See how Postgres plans to run your query, and why it's slow.</p>
+<div class="code"><pre><code class="sql">EXPLAIN SELECT * FROM orders WHERE customer_id = 1;          -- the plan only
+EXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 1;  -- runs it, shows real timings
+EXPLAIN (ANALYZE, BUFFERS) SELECT ...;                       -- plus memory/disk reads</code></pre></div>
+<div class="code"><pre><code class="sh">Index Scan using orders_customer_id_idx on orders  (cost=0.29..8.31 rows=2 width=40)
+                                                   (actual time=0.02..0.03 rows=2 loops=1)
+  Index Cond: (customer_id = 1)
+Planning Time: 0.1 ms
+Execution Time: 0.05 ms</code></pre></div>
+<div class="tbl"><table>
+<tr><th>Node</th><th>Means</th></tr>
+<tr><td><code>Seq Scan</code></td><td>Read every row. Fine on small tables, a red flag on big filtered ones.</td></tr>
+<tr><td><code>Index Scan</code></td><td>Used an index to find rows, then read them</td></tr>
+<tr><td><code>Index Only Scan</code></td><td>Answered entirely from the index. Fastest.</td></tr>
+<tr><td><code>Bitmap Heap Scan</code></td><td>Index finds many rows, reads them in batches</td></tr>
+<tr><td><code>Nested Loop</code></td><td>For each outer row, look up inner rows. Great when the outer side is small.</td></tr>
+<tr><td><code>Hash Join</code></td><td>Builds a hash table of one side. Good for large unsorted joins.</td></tr>
+<tr><td><code>Sort</code> with "external merge"</td><td>Ran out of memory and spilled to disk</td></tr>
+</table></div>
+<h3>Reading it</h3>
+<ul>
+<li>Read from the most indented line outward; inner nodes run first.</li>
+<li>Compare estimated <code>rows</code> with actual <code>rows</code>. Big mismatches mean stale statistics: run <code>ANALYZE tablename;</code>.</li>
+<li>Find the node with the largest actual time. That's your bottleneck.</li>
+<li>Paste plans into explain.dalibo.com or explain.depesz.com for a visual breakdown.</li>
+</ul>
+<div class="note warn"><p>The N+1 problem: fetching 50 orders, then running one query per order for its items, is 51 round trips. Use one JOIN, or one <code>WHERE order_id = ANY($1)</code> query. This is the most common slowdown in apps built with ORMs.</p></div>
+</section>
+
+<section id="transactions" data-group="Postgres" data-title="Transactions">
+<h2>Transactions</h2>
+<p class="lede">Group statements so they all succeed or all fail.</p>
+<div class="code"><pre><code class="sql">BEGIN;
+  INSERT INTO orders (customer_id, status) VALUES (1, 'paid') RETURNING id;   -- say it returns 7
+  INSERT INTO order_items (order_id, product_id, qty, unit_price) VALUES (7, 2, 1, 300);
+  UPDATE inventory SET stock = stock - 1 WHERE product_id = 2;
+COMMIT;       -- or ROLLBACK; to undo everything since BEGIN</code></pre></div>
+<div class="tbl"><table>
+<tr><th>ACID</th><th>Guarantee</th></tr>
+<tr><td>Atomicity</td><td>All statements apply, or none do</td></tr>
+<tr><td>Consistency</td><td>Constraints hold before and after</td></tr>
+<tr><td>Isolation</td><td>Concurrent transactions don't see each other's half-done work</td></tr>
+<tr><td>Durability</td><td>Once committed, it survives a crash</td></tr>
+</table></div>
+<h3>Isolation levels in Postgres</h3>
+<ul>
+<li><b>Read committed</b> (default): each statement sees data committed before it started.</li>
+<li><b>Repeatable read:</b> the whole transaction sees one consistent snapshot.</li>
+<li><b>Serializable:</b> behaves as if transactions ran one at a time; may fail and need a retry.</li>
+</ul>
+<div class="code"><pre><code class="sql">-- avoid lost updates when two requests change the same row
+BEGIN;
+SELECT stock FROM inventory WHERE product_id = 2 FOR UPDATE;   -- locks the row
+UPDATE inventory SET stock = stock - 1 WHERE product_id = 2;
+COMMIT;
+
+-- or do it atomically in one statement
+UPDATE inventory SET stock = stock - 1
+WHERE product_id = 2 AND stock &gt; 0
+RETURNING stock;</code></pre></div>
+<div class="note"><p>Keep transactions short. Never wait for user input or call a slow external API while one is open; it holds locks.</p></div>
+</section>
+
+<section id="jsonb" data-group="Postgres" data-title="JSONB">
+<h2>JSONB</h2>
+<p class="lede">Store and query JSON inside Postgres, for data that's truly flexible.</p>
+<div class="code"><pre><code class="sql">CREATE TABLE events (
+  id      bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  type    text NOT NULL,
+  payload jsonb NOT NULL,
+  at      timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO events (type, payload)
+VALUES ('click', '{"button": "buy", "page": "/p/42", "meta": {"ab": "B"}}');
+
+SELECT payload -&gt; 'meta'          AS meta_json,   -- returns jsonb
+       payload -&gt;&gt; 'button'       AS button,      -- returns text
+       payload #&gt;&gt; '{meta,ab}'    AS variant      -- nested path as text
+FROM events;
+
+SELECT * FROM events WHERE payload @&gt; '{"button": "buy"}';   -- contains (GIN-indexable)
+SELECT * FROM events WHERE payload ? 'meta';                 -- key exists
+
+UPDATE events SET payload = jsonb_set(payload, '{button}', '"checkout"') WHERE id = 1;
+
+-- build JSON for your API directly in SQL
+SELECT jsonb_build_object('id', o.id, 'items', jsonb_agg(oi.*)) AS order_json
+FROM orders o JOIN order_items oi ON oi.order_id = o.id
+GROUP BY o.id;</code></pre></div>
+<div class="note"><p>Use JSONB for truly variable data: event payloads, third-party webhooks, user settings. If you filter, join, or constrain a field regularly, make it a real column.</p></div>
+</section>
+
+<section id="views" data-group="Postgres" data-title="Views">
+<h2>Views</h2>
+<p class="lede">Save a query under a name and query it like a table.</p>
+<div class="code"><pre><code class="sql">-- a view re-runs its query every time
+CREATE VIEW order_totals AS
+SELECT o.id, o.customer_id, o.created_at, SUM(oi.qty * oi.unit_price) AS total
+FROM orders o JOIN order_items oi ON oi.order_id = o.id
+GROUP BY o.id;
+
+SELECT * FROM order_totals WHERE total &gt; 1000;
+
+-- a materialized view stores the result; refresh it on a schedule
+CREATE MATERIALIZED VIEW monthly_revenue AS
+SELECT date_trunc('month', created_at) AS month, SUM(total) AS revenue
+FROM order_totals GROUP BY 1;
+
+REFRESH MATERIALIZED VIEW monthly_revenue;</code></pre></div>
+<div class="note js"><p><b>In JS terms:</b> a view is a getter that recomputes on every access. A materialized view is a memoized value you invalidate manually.</p></div>
+</section>
+
+<section id="app" data-group="Postgres" data-title="Using Postgres from your app">
+<h2>Using Postgres from your app</h2>
+<p class="lede">What changes when the SQL comes from your Node backend.</p>
+<div class="code"><pre><code class="js">// node-postgres (pg)
+import pg from 'pg';
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+
+// ALWAYS use placeholders; never build SQL with template strings
+const { rows } = await pool.query(
+  'SELECT id, name FROM customers WHERE email = $1',
+  [email]
+);</code></pre></div>
+<div class="note warn"><p>SQL injection: <code>`... WHERE email = '${email}'`</code> lets a user type <code>' OR 1=1 --</code> and read everything. Parameterized queries (<code>$1</code>) send data separately from SQL, so it can never become code.</p></div>
+<ul>
+<li><b>Connection string:</b> <code>postgres://user:password@host:5432/dbname</code></li>
+<li><b>Pooling:</b> opening connections is expensive. Use a pool; on serverless, use PgBouncer or your host's pooler.</li>
+<li><b>ORMs and query builders:</b> Prisma, Drizzle, Kysely, TypeORM, Sequelize. Learn the SQL anyway; you'll need it to debug them.</li>
+<li><b>Migrations:</b> every schema change is a versioned file checked into git and run in order.</li>
+<li><b>Hosted Postgres:</b> Supabase, Neon, AWS RDS, Google Cloud SQL, Render, Railway.</li>
+<li><b>Least privilege:</b> your app's database user shouldn't be a superuser.</li>
+</ul>
+</section>
+
+<!-- ===================== WAREHOUSE ===================== -->
+<section id="facts-dims" data-group="Data warehouse" data-title="Facts and dimensions">
+<h2>Facts and dimensions</h2>
+<p class="lede">The two kinds of tables in a warehouse.</p>
+<div class="tbl"><table>
+<tr><th></th><th>Fact table</th><th>Dimension table</th></tr>
+<tr><td>Holds</td><td>Events and measurements</td><td>Descriptive context</td></tr>
+<tr><td>Answers</td><td>How much, how many</td><td>Who, what, where, when</td></tr>
+<tr><td>Columns</td><td>Foreign keys + numeric measures</td><td>Key + many text attributes</td></tr>
+<tr><td>Size</td><td>Very tall (millions to billions of rows)</td><td>Short and wide</td></tr>
+<tr><td>Example</td><td><code>fact_sales</code>: date_key, product_key, customer_key, qty, revenue</td><td><code>dim_product</code>: product_key, name, category, brand</td></tr>
+</table></div>
+<h3>Grain: decide this first</h3>
+<p>The grain is what one fact row represents. "One row per order line item" is a different table from "one row per order" or "one row per product per day". Mixing grains in one table causes double counting.</p>
+<div class="note"><p>Choose the most detailed grain you can afford. You can always roll line items up into daily totals, but you can never split daily totals back into line items.</p></div>
+<h3>Kinds of measures</h3>
+<ul>
+<li><b>Additive:</b> can be summed across every dimension: revenue, qty.</li>
+<li><b>Semi-additive:</b> summable across some dimensions but not time: account balance, stock level.</li>
+<li><b>Non-additive:</b> never summed: ratios and percentages. Store the parts (numerator, denominator) instead.</li>
+</ul>
+<h3>Date dimension</h3>
+<div class="code"><pre><code class="sql">CREATE TABLE dim_date AS
+SELECT to_char(d, 'YYYYMMDD')::int AS date_key,
+       d::date                      AS full_date,
+       extract(year FROM d)::int    AS year,
+       extract(quarter FROM d)::int AS quarter,
+       to_char(d, 'YYYY-MM')        AS year_month,
+       to_char(d, 'Day')            AS weekday,
+       extract(isodow FROM d) IN (6, 7) AS is_weekend
+FROM generate_series('2020-01-01'::date, '2030-12-31', interval '1 day') d;</code></pre></div>
+<p>A date dimension makes "weekends vs weekdays" or "fiscal quarter" a simple join instead of date math in every query. Add holidays and fiscal periods as columns.</p>
+</section>
+
+<section id="star" data-group="Data warehouse" data-title="Star vs snowflake">
+<h2>Star vs snowflake</h2>
+<p class="lede">How far to normalize your dimensions.</p>
+<div class="code"><pre><code class="sh">                dim_date
+                    |
+  dim_customer — fact_sales — dim_product        star: every dimension is one join away
+                    |
+                dim_store
+
+  dim_product — dim_category — dim_department     snowflake: dimensions normalized into chains</code></pre></div>
+<div class="tbl"><table>
+<tr><th></th><th>Star</th><th>Snowflake</th></tr>
+<tr><td>Dimensions</td><td>Flat, denormalized (category text lives in dim_product)</td><td>Split into sub-tables</td></tr>
+<tr><td>Joins per query</td><td>Few</td><td>More</td></tr>
+<tr><td>Storage</td><td>Some repetition</td><td>Less</td></tr>
+<tr><td>Ease for analysts and BI tools</td><td>High</td><td>Lower</td></tr>
+<tr><td>Recommendation</td><td>Default choice</td><td>Only for huge or shared hierarchies</td></tr>
+</table></div>
+<div class="code"><pre><code class="sql">-- the classic star query: filter and group by dimensions, sum facts
+SELECT d.year_month, p.category, c.city,
+       SUM(f.revenue) AS revenue, SUM(f.qty) AS units
+FROM fact_sales f
+JOIN dim_date d     ON d.date_key = f.date_key
+JOIN dim_product p  ON p.product_key = f.product_key
+JOIN dim_customer c ON c.customer_key = f.customer_key
+WHERE d.year = 2026
+GROUP BY 1, 2, 3
+ORDER BY 1, revenue DESC;</code></pre></div>
+<p>Modern columnar warehouses also make "one big table" (fact and dimension columns pre-joined) a reasonable choice for specific dashboards.</p>
+</section>
+
+<section id="scd" data-group="Data warehouse" data-title="Slowly changing dimensions">
+<h2>Slowly changing dimensions</h2>
+<p class="lede">What to do when a dimension's attributes change over time.</p>
+<p>Asha moves from Pune to Mumbai. Should last year's sales count toward Pune or Mumbai? Your answer picks the SCD type.</p>
+<div class="tbl"><table>
+<tr><th>Type</th><th>Behavior</th><th>Result</th></tr>
+<tr><td>Type 0</td><td>Never change the value</td><td>Original value kept forever</td></tr>
+<tr><td>Type 1</td><td>Overwrite</td><td>All history now shows Mumbai. Simple, loses history.</td></tr>
+<tr><td>Type 2</td><td>Add a new row with validity dates</td><td>Old sales stay Pune, new sales are Mumbai. Most common for important attributes.</td></tr>
+<tr><td>Type 3</td><td>Add a <code>previous_city</code> column</td><td>Keeps one level of history</td></tr>
+</table></div>
+<div class="code"><pre><code class="sql">-- Type 2 dimension
+CREATE TABLE dim_customer (
+  customer_key bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,  -- surrogate, new per version
+  customer_id  bigint NOT NULL,                                  -- natural ID from the app
+  name         text,
+  city         text,
+  valid_from   date NOT NULL,
+  valid_to     date NOT NULL DEFAULT '9999-12-31',
+  is_current   boolean NOT NULL DEFAULT true
+);
+-- customer_key | customer_id | city   | valid_from | valid_to   | is_current
+-- 1            | 1           | Pune   | 2024-01-10 | 2026-08-31 | false
+-- 7            | 1           | Mumbai | 2026-09-01 | 9999-12-31 | true</code></pre></div>
+<p>Facts store <code>customer_key</code>, so each sale permanently points to the version that was true when it happened. That's why warehouse dimensions use their own surrogate keys instead of the app's IDs.</p>
+</section>
+
+<section id="pipelines" data-group="Data warehouse" data-title="ETL, ELT and pipelines">
+<h2>ETL, ELT and pipelines</h2>
+<p class="lede">How data gets from your app's Postgres into the warehouse.</p>
+<div class="tbl"><table>
+<tr><th></th><th>ETL</th><th>ELT</th></tr>
+<tr><td>Order</td><td>Extract → Transform → Load</td><td>Extract → Load raw → Transform inside the warehouse</td></tr>
+<tr><td>Transform where</td><td>Separate processing server</td><td>In SQL, in the warehouse</td></tr>
+<tr><td>Era</td><td>Traditional</td><td>Modern default, thanks to cheap columnar compute</td></tr>
+</table></div>
+<h3>Typical modern layers</h3>
+<ol>
+<li><b>Raw / staging:</b> exact copies of source tables, lightly cleaned (renamed columns, fixed types).</li>
+<li><b>Intermediate:</b> joins and business logic, like "an order counts as revenue once paid".</li>
+<li><b>Marts:</b> final facts and dimensions that dashboards and analysts query.</li>
+</ol>
+<h3>Common tools</h3>
+<div class="tbl"><table>
+<tr><th>Job</th><th>Tools</th></tr>
+<tr><td>Extract and load</td><td>Fivetran, Airbyte, Debezium (change data capture), custom scripts</td></tr>
+<tr><td>Transform in SQL</td><td>dbt, SQLMesh</td></tr>
+<tr><td>Orchestrate schedules</td><td>Airflow, Dagster, Prefect</td></tr>
+<tr><td>Warehouse</td><td>BigQuery, Snowflake, Redshift, Databricks, ClickHouse, DuckDB locally</td></tr>
+<tr><td>Dashboards</td><td>Metabase, Superset, Looker, Power BI, Tableau</td></tr>
+</table></div>
+<h3>Loading strategies</h3>
+<ul>
+<li><b>Full refresh:</b> reload everything. Simple; fine for small tables.</li>
+<li><b>Incremental:</b> only rows where <code>updated_at</code> is newer than the last run. Needs reliable timestamps.</li>
+<li><b>Change data capture:</b> stream inserts, updates, and deletes from Postgres's write-ahead log.</li>
+</ul>
+<div class="note"><p>Make loads idempotent: running the same job twice should give the same result, not duplicate rows. Delete-then-insert by date range, or merge on keys.</p></div>
+</section>
+
+<section id="columnar" data-group="Data warehouse" data-title="Why columnar is fast">
+<h2>Why columnar is fast</h2>
+<p class="lede">The storage idea behind every modern warehouse.</p>
+<div class="code"><pre><code class="sh">Row store (Postgres):     [1, Asha, Pune, 2100] [2, Rohan, Mumbai, 9000] ...
+Column store (warehouse): id: [1, 2, ...]   name: [Asha, Rohan, ...]   total: [2100, 9000, ...]</code></pre></div>
+<ul>
+<li><code>SUM(total)</code> reads only the total column, not whole rows.</li>
+<li>Similar values sit together and compress extremely well.</li>
+<li>Single-row lookups and updates get slower, which warehouses don't need much.</li>
+</ul>
+<div class="note"><p>Warehouse cost tips: select only the columns you need (<code>SELECT *</code> can be expensive on BigQuery), and filter on partition columns, usually date, so whole chunks get skipped.</p></div>
+<div class="note js"><p><b>In JS terms:</b> a row store is an array of objects. A column store is an object of arrays, like <code>{ id: [...], total: [...] }</code>, which is how charting libraries often want data anyway.</p></div>
+</section>
+
+<section id="analytics" data-group="Data warehouse" data-title="Analytics SQL patterns">
+<h2>Analytics SQL patterns</h2>
+<p class="lede">Queries you'll write over and over in a warehouse.</p>
+<div class="code"><pre><code class="sql">-- monthly revenue with month-over-month growth
+WITH m AS (
+  SELECT date_trunc('month', order_date) AS month, SUM(revenue) AS revenue
+  FROM fact_sales GROUP BY 1
+)
+SELECT month, revenue,
+       round(100.0 * (revenue - LAG(revenue) OVER (ORDER BY month))
+             / NULLIF(LAG(revenue) OVER (ORDER BY month), 0), 1) AS growth_pct
+FROM m ORDER BY month;
+
+-- share of total
+SELECT category, SUM(revenue) AS revenue,
+       round(100.0 * SUM(revenue) / SUM(SUM(revenue)) OVER (), 1) AS pct_of_total
+FROM fact_sales f JOIN dim_product p USING (product_key)
+GROUP BY category;
+
+-- cohort: customers grouped by first-purchase month, active in later months
+WITH firsts AS (
+  SELECT customer_id, date_trunc('month', MIN(order_date)) AS cohort
+  FROM fact_sales GROUP BY 1
+),
+activity AS (
+  SELECT DISTINCT customer_id, date_trunc('month', order_date) AS month
+  FROM fact_sales
+)
+SELECT f.cohort, a.month, COUNT(*) AS active_customers
+FROM firsts f JOIN activity a USING (customer_id)
+GROUP BY 1, 2 ORDER BY 1, 2;
+
+-- 7-day moving average
+SELECT day, revenue,
+       AVG(revenue) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS ma_7d
+FROM daily_revenue;
+
+-- pivot with conditional aggregation
+SELECT p.category,
+       SUM(revenue) FILTER (WHERE d.quarter = 1) AS q1,
+       SUM(revenue) FILTER (WHERE d.quarter = 2) AS q2,
+       SUM(revenue) FILTER (WHERE d.quarter = 3) AS q3,
+       SUM(revenue) FILTER (WHERE d.quarter = 4) AS q4
+FROM fact_sales f
+JOIN dim_product p USING (product_key)
+JOIN dim_date d USING (date_key)
+GROUP BY p.category;</code></pre></div>
+<p>Multiply by <code>100.0</code>, not <code>100</code>: integer division in SQL drops decimals, so <code>1 / 4</code> is <code>0</code>.</p>
+</section>
+
+<section id="warehouse-checklist" data-group="Data warehouse" data-title="Warehouse design checklist">
+<h2>Warehouse design checklist</h2>
+<p class="lede">The Kimball four-step process, plus practical checks.</p>
+<ol>
+<li><b>Pick the business process:</b> sales, signups, support tickets. One fact table per process.</li>
+<li><b>Declare the grain:</b> "one row per order line item". Write it down.</li>
+<li><b>Identify dimensions:</b> who, what, where, when, how. Each becomes a dim table.</li>
+<li><b>Identify facts:</b> the numeric measures at that grain.</li>
+</ol>
+<ul>
+<li>Every fact row has a valid key for every dimension. Use an "Unknown" member row instead of NULL keys.</li>
+<li>Decide the SCD type for each important dimension attribute.</li>
+<li>Store monetary facts in one currency or alongside a currency column.</li>
+<li>Write tests: row counts match the source, keys are unique, no NULL foreign keys (dbt tests do this).</li>
+<li>Document every column's meaning. "Revenue" means different things to finance and marketing.</li>
+<li>Partition big fact tables by date.</li>
+</ul>
+<div class="note"><p>The book that defined this field is <i>The Data Warehouse Toolkit</i> by Ralph Kimball and Margy Ross. Chapters 1 to 3 cover most of what you'll use.</p></div>
+</section>
+
+<!-- ===================== REFERENCE ===================== -->
+<section id="js-sql" data-group="Reference" data-title="JavaScript to SQL">
+<h2>JavaScript to SQL</h2>
+<p class="lede">Translate what you already know.</p>
+<div class="tbl"><table>
+<tr><th>JavaScript</th><th>SQL</th></tr>
+<tr><td><code>items.filter(x =&gt; x.price &gt; 100)</code></td><td><code>WHERE price &gt; 100</code></td></tr>
+<tr><td><code>items.map(x =&gt; ({ name: x.name }))</code></td><td><code>SELECT name</code></td></tr>
+<tr><td><code>items.sort((a, b) =&gt; b.price - a.price)</code></td><td><code>ORDER BY price DESC</code></td></tr>
+<tr><td><code>items.slice(0, 10)</code></td><td><code>LIMIT 10</code></td></tr>
+<tr><td><code>items.length</code></td><td><code>COUNT(*)</code></td></tr>
+<tr><td><code>items.reduce((s, x) =&gt; s + x.price, 0)</code></td><td><code>SUM(price)</code></td></tr>
+<tr><td><code>Object.groupBy(items, x =&gt; x.category)</code></td><td><code>GROUP BY category</code></td></tr>
+<tr><td><code>[...new Set(items.map(x =&gt; x.city))]</code></td><td><code>SELECT DISTINCT city</code></td></tr>
+<tr><td><code>items.find(x =&gt; x.id === 7)</code></td><td><code>WHERE id = 7</code> (with a PK index, instant)</td></tr>
+<tr><td><code>items.some(...)</code></td><td><code>EXISTS (...)</code></td></tr>
+<tr><td><code>usersById[order.userId]</code></td><td><code>JOIN users u ON u.id = o.user_id</code></td></tr>
+<tr><td><code>x ?? 'default'</code></td><td><code>COALESCE(x, 'default')</code></td></tr>
+<tr><td><code>cond ? a : b</code></td><td><code>CASE WHEN cond THEN a ELSE b END</code></td></tr>
+<tr><td><code>str.includes('abc')</code></td><td><code>col LIKE '%abc%'</code></td></tr>
+<tr><td><code>new Map()</code> for fast lookups</td><td><code>CREATE INDEX</code></td></tr>
+<tr><td>try/catch around several writes</td><td><code>BEGIN ... COMMIT / ROLLBACK</code></td></tr>
+<tr><td>TypeScript types</td><td>Column types + constraints (enforced at runtime, always)</td></tr>
+<tr><td>Normalized Redux store</td><td>Normalized tables with foreign keys</td></tr>
+</table></div>
+</section>
+
+<section id="mistakes" data-group="Reference" data-title="Common mistakes">
+<h2>Common mistakes</h2>
+<p class="lede">The bugs almost everyone hits once.</p>
+<div class="tbl"><table>
+<tr><th>Mistake</th><th>Fix</th></tr>
+<tr><td><code>WHERE col = NULL</code></td><td><code>WHERE col IS NULL</code></td></tr>
+<tr><td>Building SQL with string interpolation</td><td>Parameterized queries: <code>$1</code>, <code>$2</code></td></tr>
+<tr><td>UPDATE/DELETE without WHERE</td><td>Run as SELECT first; use transactions</td></tr>
+<tr><td>Inflated SUMs after a join</td><td>Aggregate the many-side in a CTE first, then join</td></tr>
+<tr><td>Filtering a LEFT JOIN's right table in WHERE</td><td>Move the condition into <code>ON</code></td></tr>
+<tr><td><code>NOT IN</code> with a subquery containing NULL</td><td>Use <code>NOT EXISTS</code></td></tr>
+<tr><td>Money in <code>float</code></td><td><code>numeric</code> or integer paise</td></tr>
+<tr><td><code>timestamp</code> without time zone</td><td><code>timestamptz</code></td></tr>
+<tr><td>No index on foreign keys</td><td>Index every FK you join or filter on</td></tr>
+<tr><td>N+1 queries from a loop</td><td>One JOIN or <code>= ANY($1)</code></td></tr>
+<tr><td>Integer division: <code>1 / 4 = 0</code></td><td><code>1.0 / 4</code> or cast to numeric</td></tr>
+<tr><td>Relying on row order without ORDER BY</td><td>Always specify ORDER BY</td></tr>
+<tr><td>Comma-separated IDs in one column</td><td>A junction table</td></tr>
+<tr><td>Mixed grains in one fact table</td><td>One grain per fact table</td></tr>
+<tr><td>Overwriting dimension history you needed</td><td>SCD Type 2 for that attribute</td></tr>
+</table></div>
+</section>
+
+<section id="next" data-group="Reference" data-title="Practice and resources">
+<h2>Practice and resources</h2>
+<p class="lede">Where to go after this cheatsheet.</p>
+<h3>Practice</h3>
+<ul>
+<li><b>SQLBolt</b> and <b>pgexercises.com</b>: short interactive lessons; pgexercises is Postgres-specific.</li>
+<li><b>Mode SQL tutorial</b>: strong on analytics queries.</li>
+<li><b>DuckDB</b>: run warehouse-style SQL on CSV or Parquet files on your laptop, no server.</li>
+<li>Build your own: model an app you've already built the frontend for, then write every query its screens need.</li>
+</ul>
+<h3>Reference</h3>
+<ul>
+<li><a href="https://www.postgresql.org/docs/current/">PostgreSQL documentation</a>: the tutorial chapter is excellent.</li>
+<li><i>The Data Warehouse Toolkit</i> by Kimball and Ross: dimensional modeling.</li>
+<li><i>Designing Data-Intensive Applications</i> by Martin Kleppmann: the deep "why" behind databases.</li>
+<li><i>Use The Index, Luke</i> (use-the-index-luke.com): indexing and performance, free online.</li>
+<li>dbt documentation: modern warehouse transformation practices.</li>
+</ul>
+<h3>Keyboard shortcuts on this page</h3>
+<div class="tbl"><table>
+<tr><th>Key</th><th>Action</th></tr>
+<tr><td><kbd>/</kbd></td><td>Search topics</td></tr>
+<tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Previous / next section</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Clear search, close menu</td></tr>
+</table></div>
+</section>
+
+</div>
+</main>
+</div>
+
+<script>
+(function(){
+  const sections=[...document.querySelectorAll('section')];
+  const nav=document.getElementById('nav');
+  const main=document.getElementById('main');
+  const q=document.getElementById('q');
+  const allBtn=document.getElementById('allBtn');
+  const topTitle=document.getElementById('topTitle');
+  const links={};
+
+  // build sidebar
+  let lastGroup=null;
+  sections.forEach(s=>{
+    const g=s.dataset.group;
+    if(g!==lastGroup){const h=document.createElement('div');h.className='group';h.textContent=g;h.dataset.group=g;nav.appendChild(h);lastGroup=g;}
+    const a=document.createElement('a');
+    a.href='#'+s.id;a.textContent=s.dataset.title;a.dataset.group=g;
+    nav.appendChild(a);links[s.id]=a;
+  });
+  const empty=document.createElement('div');empty.className='empty';empty.textContent='No topics match. Try a shorter word.';empty.hidden=true;nav.appendChild(empty);
+
+  // prev / next
+  sections.forEach((s,i)=>{
+    const p=sections[i-1],n=sections[i+1];
+    const d=document.createElement('div');d.className='pager';
+    d.innerHTML=(p?`<a href="#${p.id}"><small>Previous</small>${p.dataset.title}</a>`:'<span style="flex:1"></span>')+
+                (n?`<a class="next" href="#${n.id}"><small>Next</small>${n.dataset.title}</a>`:'<span style="flex:1"></span>');
+    s.appendChild(d);
+  });
+
+  // SQL highlighter
+  const KW=new Set(('select from where and or not in is null as join left right full outer inner cross on using group by order having limit offset distinct insert into values update set delete returning create table alter drop add column index primary key foreign references unique check default constraint with recursive case when then else end over partition rows range between unbounded preceding following current row begin commit rollback explain analyze view materialized refresh exists like ilike asc desc conflict do nothing union all intersect except generated always identity cascade restrict if true false filter lateral rename to nulls first last concurrently gin truncate database excluded any for interval nothing int bigint text numeric boolean date timestamptz uuid jsonb real double precision').split(' '));
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  function hl(src){
+    const re=/(--[^\n]*)|('(?:[^']|'')*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)|([\s\S])/g;
+    let out='',m;
+    while((m=re.exec(src))){
+      if(m[1])out+=`<span class="tc">${esc(m[1])}</span>`;
+      else if(m[2])out+=`<span class="ts">${esc(m[2])}</span>`;
+      else if(m[3])out+=`<span class="tn">${m[3]}</span>`;
+      else if(m[4]){
+        const w=m[4],rest=src.slice(re.lastIndex);
+        if(KW.has(w.toLowerCase()))out+=`<span class="tk">${w}</span>`;
+        else if(/^\s*\(/.test(rest))out+=`<span class="tf">${w}</span>`;
+        else out+=w;
+      } else out+=esc(m[5]);
+    }
+    return out;
+  }
+  document.querySelectorAll('pre code').forEach(c=>{
+    if(c.classList.contains('sql'))c.innerHTML=hl(c.textContent);
+    else if(c.classList.contains('js'))c.innerHTML=c.innerHTML.replace(/(\/\/[^\n]*)/g,'<span class="tc">$1</span>');
+    const wrap=c.closest('.code');
+    const b=document.createElement('button');b.className='copy';b.type='button';b.textContent='Copy';
+    b.onclick=async()=>{
+      const t=c.textContent;
+      try{await navigator.clipboard.writeText(t);}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
+      b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1200);
+    };
+    wrap.appendChild(b);
+  });
+
+  // routing
+  function current(){const id=location.hash.slice(1);return sections.find(s=>s.id===id)||sections[0];}
+  function render(){
+    const s=current();
+    sections.forEach(x=>x.classList.toggle('show',x===s));
+    Object.values(links).forEach(a=>a.classList.remove('active'));
+    links[s.id].classList.add('active');
+    links[s.id].scrollIntoView({block:'nearest'});
+    document.title=s.dataset.title+' | Database cheatsheet';
+    topTitle.textContent=s.dataset.title;
+    if(document.body.classList.contains('all')){document.getElementById(s.id).scrollIntoView();}
+    else main.scrollTop=0;
+    document.body.classList.remove('nav-open');
+  }
+  window.addEventListener('hashchange',render);
+
+  // single-page mode
+  let all=false;
+  try{all=localStorage.getItem('cheat-all')==='1';}catch(e){}
+  function setAll(v){
+    all=v;document.body.classList.toggle('all',v);
+    allBtn.classList.toggle('on',v);
+    allBtn.textContent=v?'Show one section at a time':'Show all on one page';
+    try{localStorage.setItem('cheat-all',v?'1':'0');}catch(e){}
+  }
+  allBtn.onclick=()=>{setAll(!all);render();};
+  setAll(all);
+
+  // highlight nav while scrolling in single-page mode
+  main.addEventListener('scroll',()=>{
+    if(!all)return;
+    let cur=sections[0];
+    for(const s of sections){if(s.getBoundingClientRect().top<140)cur=s;}
+    Object.values(links).forEach(a=>a.classList.toggle('active',a===links[cur.id]));
+  },{passive:true});
+
+  // search
+  q.addEventListener('input',()=>{
+    const term=q.value.trim().toLowerCase();
+    let any=false;const visibleGroups=new Set();
+    sections.forEach(s=>{
+      const hit=!term||s.dataset.title.toLowerCase().includes(term)||s.textContent.toLowerCase().includes(term);
+      links[s.id].hidden=!hit;if(hit){any=true;visibleGroups.add(s.dataset.group);}
+    });
+    nav.querySelectorAll('.group').forEach(g=>g.hidden=!visibleGroups.has(g.dataset.group));
+    empty.hidden=any;
+  });
+  q.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){const first=Object.values(links).find(a=>!a.hidden);if(first){location.hash=first.getAttribute('href');q.blur();}}
+  });
+
+  // keyboard
+  document.addEventListener('keydown',e=>{
+    const typing=/input|textarea/i.test(document.activeElement.tagName);
+    if(e.key==='/'&&!typing){e.preventDefault();q.focus();return;}
+    if(e.key==='Escape'){q.value='';q.dispatchEvent(new Event('input'));q.blur();document.body.classList.remove('nav-open');return;}
+    if(typing||all||e.metaKey||e.ctrlKey||e.altKey)return;
+    const i=sections.indexOf(current());
+    if(e.key==='ArrowRight'&&sections[i+1])location.hash=sections[i+1].id;
+    if(e.key==='ArrowLeft'&&sections[i-1])location.hash=sections[i-1].id;
+  });
+
+  // mobile menu
+  document.getElementById('menuBtn').onclick=()=>document.body.classList.add('nav-open');
+  document.getElementById('scrim').onclick=()=>document.body.classList.remove('nav-open');
+
+  render();
+})();
+</script>
+</body>
+</html>

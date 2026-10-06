@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15181e; --raise:#1f242c; --line:#2b313b;
+  --text:#d9dee6; --muted:#8e97a6; --accent:#7fb2e5;
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.7 var(--sans);-webkit-font-smoothing:antialiased}
+main{max-width:720px;margin:0 auto;padding:80px 24px}
+h1{font-size:30px;font-weight:600;letter-spacing:-.02em;margin:0 0 6px}
+.lede{color:var(--muted);font-size:16px;margin:0 0 40px}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+a{display:block;color:var(--text);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:16px 20px;transition:border-color .15s}
+a:hover{border-color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a strong{display:block;font-size:17px;font-weight:600;color:var(--accent)}
+a span{color:var(--muted);font-size:14px}
+footer{margin-top:48px;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:reduce){a{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Study notes</h1>
+  <p class="lede">Cheatsheets and notes I've put together while learning.</p>
+
+  <ul>
+    <!-- To add a page: copy one <li> block, change the href, title, and description. -->
+    <li>
+      <a href="database-cheatsheet.html">
+        <strong>Database cheatsheet</strong>
+        <span>SQL, database design, Postgres, and data warehouse design</span>
+      </a>
+    </li>
+  </ul>
+
+  <footer>Soham Tamboli</footer>
+</main>
+</body>
+</html>
